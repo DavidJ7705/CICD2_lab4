@@ -144,3 +144,29 @@ def delete_user(user_id: int, db: Session = Depends(get_db)) -> Response:
     db.delete(user) # <-- triggers cascade="all, delete-orphan" on projects
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@app.put("/api/users/{user_id}", response_model=UserRead, status_code=status.HTTP_200_OK)
+def update_user(user_id: int, updated_user: UserCreate, db: Session = Depends(get_db)) -> Response:
+
+    result = (db.query(UserDB).filter(UserDB.id == user_id).update(updated_user.model_dump()))
+    
+    if not result:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    commit_or_rollback(db, "User update failed (duplicate email or student_id)")
+
+    user = db.get(UserDB, user_id)
+    return user
+
+@app.patch("/api/users/{user_id}", response_model=UserRead, status_code=status.HTTP_200_OK)
+def patch_user(user_id: int, partial_user: dict, db: Session = Depends(get_db)):
+    result = (db.query(UserDB).filter(UserDB.id == user_id).update(partial_user))
+
+    if not result:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    commit_or_rollback(db, "User partial update failed")
+    user = db.get(UserDB, user_id)
+    return user
+

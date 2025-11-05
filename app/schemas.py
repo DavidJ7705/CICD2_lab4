@@ -1,7 +1,7 @@
 # app/schemas.py
 from typing import Annotated, Optional, List
 from annotated_types import Ge, Le
-from pydantic import BaseModel, EmailStr, ConfigDict, StringConstraints
+from pydantic import BaseModel, EmailStr, ConfigDict, StringConstraints, Field
 
 NameStr = Annotated[str, StringConstraints(min_length=2, max_length=50)]
 StudentId = Annotated[str, StringConstraints(pattern=r"^S\d{7}$")]
