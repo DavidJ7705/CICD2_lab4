@@ -170,3 +170,42 @@ def patch_user(user_id: int, partial_user: dict, db: Session = Depends(get_db)):
     user = db.get(UserDB, user_id)
     return user
 
+
+@app.put("/api/projects/{project_id}", response_model=ProjectRead, status_code=status.HTTP_200_OK)
+def update_project(project_id: int, project: ProjectCreate, db: Session = Depends(get_db)):
+
+    proj = db.get(ProjectDB, project_id)
+    if not proj:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    owner = db.get(UserDB, project.owner_id)
+    if not owner:
+        raise HTTPException(status_code=404, detail="Owner user not found")
+
+
+    for field, value in project.model_dump().items():
+        setattr(proj, field, value)
+
+    commit_or_rollback(db, "Project update failed")
+    db.refresh(proj)
+    return proj
+
+@app.patch("/api/projects/{project_id}", response_model=ProjectRead, status_code=status.HTTP_200_OK)
+def patch_project(project_id: int, partial_project: dict, db: Session = Depends(get_db)):
+
+    proj = db.get(ProjectDB, project_id)
+    if not proj:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    if "owner_id" in partial_project:
+        owner = db.get(UserDB, partial_project["owner_id"])
+        if not owner:
+            raise HTTPException(status_code=404, detail="Owner user not found")
+
+    for field, value in partial_project.items():
+        if hasattr(proj, field):
+            setattr(proj, field, value)
+
+    commit_or_rollback(db, "Project partial update failed")
+    db.refresh(proj)
+    return proj
